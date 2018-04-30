@@ -1,0 +1,5 @@
+cscope.files
+cscope.out
+TAGS
+tags
+!/threads/build/tests/threads/priority-change.output
