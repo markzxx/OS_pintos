@@ -111,11 +111,6 @@ struct thread
     unsigned magic;                     /* Detects stack overflow. */
   };
 
-//struct donation{
-//    int tid;
-//    int priority;
-//    struct list_elem
-//};
 
 /* If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.
@@ -158,6 +153,7 @@ extern struct lock;
 void thread_donate_priority (struct thread *t, struct lock *l, int priority);
 void thread_relocate_donate (struct lock *l);
 
+int thread_get_readylist_size (void);
 int thread_get_nice (void);
 void thread_set_nice (int);
 int thread_get_recent_cpu (void);

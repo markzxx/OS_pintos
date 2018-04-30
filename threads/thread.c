@@ -133,6 +133,7 @@ thread_tick (void)
 //    int len = strlen (t-> name);
 //    if (t->name[len - 1] >= '0' && t->name[len - 1] <= '9')
 //        printf ("(%c%c,%d) ", t->name[len - 2], t->name[len - 1], t->priority);
+
     //things to help us testing your program  ***   !!!
     
   /* Update statistics. */
@@ -150,8 +151,8 @@ thread_tick (void)
   {
       if(strcmp(t->name,"main")!=0)
       {
-          t->priority = MAX(t->priority-3, 0);
-          t->base_priority = MAX(t->base_priority-3, 0);
+//          t->priority = MAX(t->priority-3, 0);
+//          t->base_priority = MAX(t->base_priority-3, 0);
       }
       intr_yield_on_return ();
   }
@@ -218,7 +219,7 @@ thread_create (const char *name, int priority,
 
   /* Add to run queue. */
   thread_unblock (t);
-    thread_priority_yield();
+  thread_priority_yield();
   return tid;
 }
 
@@ -295,6 +296,9 @@ void thread_priority_yield (void){
             thread_yield();
 }
 
+int thread_get_readylist_size (void){
+    return list_size(&ready_list);
+}
 
 //thread wait for ticks
 void
@@ -420,7 +424,7 @@ thread_set_priority (int new_priority)
 
 /*Donate priority to a thread */
 void thread_donate_priority (struct thread *t, struct lock *l, int priority){
-    l->donate_priori = priority;
+    l->donate_priority = priority;
     list_reinsert(&t->lock_list, &l->elem, lock_priority_comp, NULL);
     t->priority = priority;
 
@@ -438,14 +442,12 @@ void thread_donate_priority (struct thread *t, struct lock *l, int priority){
 
 /*relocate denate priority*/
 void thread_relocate_donate (struct lock *l){
-    struct thread *t  = thread_current() ;
-    list_remove(&l->elem);
-    l->donate_priori = 0;
-    if(list_empty(&t->lock_list)){
+    struct thread *t  = thread_current();
+    l->donate_priority = -1;
+    if(list_empty(&t->lock_list))
         t->priority = t->base_priority;
-    } else{
-        t->priority = MAX(t->base_priority,list_entry(list_front(&t->lock_list), struct lock, elem)->donate_priori);
-    }
+    else
+        t->priority = MAX(t->base_priority, list_entry(list_front(&t->lock_list), struct lock, elem)->donate_priority);
 }
 
 
@@ -676,7 +678,7 @@ schedule (void)
   ASSERT (is_thread (next));
 
   if (cur != next)
-    prev = switch_threads (cur, next);
+     prev = switch_threads (cur, next);
 
   thread_schedule_tail (prev);
 }

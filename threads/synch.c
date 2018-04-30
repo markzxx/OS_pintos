@@ -69,7 +69,7 @@ sema_down (struct semaphore *sema)
   while (sema->value == 0) 
     {
       list_insert_ordered (&sema->waiters, &thread_current ()->elem, thread_priority_comp, NULL);
-        thread_current()->sema = sema;
+      thread_current()->sema = sema;
       thread_block ();
     }
   sema->value--;
@@ -184,7 +184,7 @@ lock_init (struct lock *lock)
 
   lock->holder = NULL;
   sema_init (&lock->semaphore, 1);
-  lock->donate_priori = 0;
+  lock->donate_priority = -1;
 }
 
 /* Acquires LOCK, sleeping until it becomes available if
@@ -238,7 +238,7 @@ lock_try_acquire (struct lock *lock)
 }
 
 bool lock_priority_comp (const struct list_elem* a,const struct list_elem*b, void* aux){
-    return list_entry (a, struct lock, elem)->donate_priori > list_entry (b, struct lock, elem)->donate_priori;
+    return list_entry (a, struct lock, elem)->donate_priority > list_entry (b, struct lock, elem)->donate_priority;
 }
 
 /* Releases LOCK, which must be owned by the current thread.
@@ -253,7 +253,8 @@ lock_release (struct lock *lock)
   ASSERT (lock_held_by_current_thread (lock));
     enum intr_level old_level;
     old_level = intr_disable ();
-    if(lock->donate_priori != 0)
+    list_remove(&lock->elem);
+    if(lock->donate_priority != -1)
         thread_relocate_donate(lock);
     lock->holder = NULL;
     sema_up (&lock->semaphore);
@@ -313,23 +314,22 @@ cond_wait (struct condition *cond, struct lock *lock)
   ASSERT (lock != NULL);
   ASSERT (!intr_context ());
   ASSERT (lock_held_by_current_thread (lock));
-    struct thread *t = thread_current() ;
-    enum intr_level old_level;
-    old_level = intr_disable ();
+  struct thread *t = thread_current() ;
+  enum intr_level old_level;
+
   sema_init (&waiter.semaphore, 0);
-    waiter.thread = t;
-    t->cond = &cond->waiters;
-    t->cond_waiter = waiter.elem;
+  waiter.thread = t;
+  t->cond = &cond->waiters;
+  t->cond_waiter = waiter.elem;
 
-
-
+    old_level = intr_disable ();
   list_insert_ordered (&cond->waiters, &waiter.elem, cond_priority_comp, NULL);
-//
+    intr_set_level (old_level);
 
   lock_release (lock);
   sema_down (&waiter.semaphore);
   lock_acquire (lock);
-  intr_set_level (old_level);
+
 }
 
 /* If any threads are waiting on COND (protected by LOCK), then
