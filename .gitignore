@@ -2,4 +2,4 @@ cscope.files
 cscope.out
 TAGS
 tags
-!/threads/build/tests/threads/priority-change.output
+!/pintos/src/threads/build/tests/threads/priority-change.output
